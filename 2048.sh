@@ -1,14 +1,5 @@
 #!/bin/bash
-
-readonly SIZE=4
-readonly TARGET=2048
-
-declare -A MOVE
-MOVE[up]=-$SIZE
-MOVE[down]=+$SIZE
-MOVE[left]=-1
-MOVE[right]=+1
-readonly MOVE
+# Bash 2048 Game by Mekswhy
 
 declare -A COLORS
 COLORS[0]=$'\e[0m' # Reset
@@ -26,12 +17,17 @@ COLORS[1024]=$'\e[36m\e[7m' # Cyan background
 COLORS[2048]=$'\e[31m\e[7m' # Red background
 readonly COLORS
 
+SIZE=4
+TARGET=2048
+declare -A MOVE
+
+# Game State
 BOARD=()
 PIECES=0
 LAST=0
 
 main() {
-  init
+  init "$@"
   while true; do
     print_board
     check_state
@@ -42,12 +38,53 @@ main() {
 
 init() {
   exec 3> /dev/null
+  while getopts "s:t:l:" opt; do
+    case $opt in
+      s)
+        SIZE="$OPTARG"
+        if (( SIZE < 3 || SIZE > 9 )); then
+          echo "Board size between 3 and 9" >&2
+          exit 1
+        fi
+        ;;
+      t)
+        TARGET="$OPTARG"
+        if (( TARGET < 16 || TARGET > 8196 )); then
+          echo "Target between 16 and 8196" >&2
+          exit 1
+        fi
+        ;;
+      l)
+        exec 3> "$OPTARG"
+        ;;
+      *)
+        usage
+        ;;
+    esac
+  done
+  
+  readonly SIZE
+  readonly TARGET
+  MOVE[up]=-$SIZE
+  MOVE[down]=+$SIZE
+  MOVE[left]=-1
+  MOVE[right]=+1
+  readonly MOVE
+
   local i
   for (( i = 0; i < SIZE*SIZE; i++ )); do
     BOARD[$i]=0
   done
   gen_piece
   gen_piece
+}
+
+usage() {
+  echo "Usage: $0 [-s <3-9>] [-t <16-8196>]" >&2
+  echo "s: Board Size" >&2
+  echo "t: Target" >&2
+  echo "l: Log Path" >&2
+  exit 1
 }
 
 gen_piece() {
@@ -65,6 +102,7 @@ gen_piece() {
 
 print_board() {
   clear
+  echo 'Bash 2048 Game by Mekswhy'
   local i j
   for (( i = 0; i < SIZE; i++ )); do
     print_line
