@@ -37,18 +37,18 @@ main() {
 }
 
 init() {
-  exec 3> /dev/null
+  exec 3> "/dev/null"
   while getopts "s:t:l:" opt; do
     case $opt in
       s)
-        SIZE="$OPTARG"
+        SIZE=$OPTARG
         if (( SIZE < 3 || SIZE > 9 )); then
           echo "Board size between 3 and 9" >&2
           exit 1
         fi
         ;;
       t)
-        TARGET="$OPTARG"
+        TARGET=$OPTARG
         if (( TARGET < 16 || TARGET > 8196 )); then
           echo "Target between 16 and 8196" >&2
           exit 1
@@ -62,7 +62,7 @@ init() {
         ;;
     esac
   done
-  
+
   readonly SIZE
   readonly TARGET
   MOVE[up]=-$SIZE
@@ -94,24 +94,24 @@ gen_piece() {
     (( BOARD[LAST] == 0 )) && {
       (( BOARD[LAST] = RANDOM%10 ? 2 : 4 ))
       (( PIECES++ ))
-      printf $'Generate piece %d on %d\n' ${BOARD[$LAST]} $LAST >&3
+      printf "Generate piece %d on %d\n" ${BOARD[$LAST]} $LAST >&3
       break
-    } 
+    }
   done
 }
 
 print_board() {
   clear
-  echo 'Bash 2048 Game by Mekswhy'
+  echo "Bash 2048 Game by Mekswhy"
   local i j
   for (( i = 0; i < SIZE; i++ )); do
     print_line
     for (( j = 0; j < SIZE; j++ )); do
       local val=$(( BOARD[i*SIZE+j] ))
       local color=$(( i*SIZE+j == LAST ? 1 : $val ))
-      printf '|%s%4d%s' ${COLORS[$color]} $val ${COLORS[0]}
+      printf "|%s%4d%s" ${COLORS[$color]} $val ${COLORS[0]}
     done
-    echo '|'
+    echo "|"
   done
   print_line
 }
@@ -119,44 +119,44 @@ print_board() {
 print_line() {
   local i
   for (( i = 0; i < SIZE; i++ )); do
-    printf '+----'
+    printf "+----"
   done
-  echo '+'
+  echo "+"
 }
 
 check_state() {
   # Win?
-  if [[ "${BOARD[@]}" =~ $TARGET ]]; then
-    echo Win!
+  if [[ ${BOARD[@]} =~ $TARGET ]]; then
+    echo "Win!"
     exit 0
   fi
   # Failed?
-  # (( PIECES != SIZE*SIZE )) && return
+  (( PIECES != SIZE*SIZE )) && return
   # Save game state
   local old_board=("${BOARD[@]}")
   local old_pieces=$PIECES
-  local merged=no
+  local merged=false
   for dir in up down left right; do
     push_all $dir
     if (( PIECES < old_pieces )); then
-      echo 'Can merge' >&3
-      merged=yes
+      echo "Can merge" >&3
+      merged=true
       break
     fi
   done
   BOARD=("${old_board[@]}")
   PIECES=$old_pieces
-  if (( PIECES == SIZE*SIZE )) && [[ $merged == no ]]; then
-    echo Failed...
+  if (( PIECES == SIZE*SIZE )) && [[ $merged == false ]]; then
+    echo "Failed..."
     exit 1
   fi
 }
 
 key_react() {
   read -sn 1
-  [[ "$REPLY" == $'\e' ]] && {
+  [[ $REPLY == $'\e' ]] && {
     read -sn 1 -t 0.1
-    [[ "$REPLY" == '[' ]] && {
+    [[ $REPLY == "[" ]] && {
       read -sn 1 -t 0.1
       case $REPLY in
         A) push_all up ;;
@@ -183,7 +183,7 @@ push_all() {
 push_line() {
   local dir index
   dir=$1; index=$2
-  printf $'Push from %s at %d row/col\n' $dir $index >&3
+  printf "Push from %s at %d row/col\n" $dir $index >&3
 
   # Traverse direction is opposite to push direction
   case $dir in
